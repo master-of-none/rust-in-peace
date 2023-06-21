@@ -89,11 +89,11 @@ mod tests {
             description: "An apple (Get it to increase health)".to_string(),
             location: Some(LOC_TAVERN),
             destination: None,
-            item: Some(true),
+            item: true,
             enemy: false,
             health: Some(10),
             attack: None,
-            consumable: Some(true),
+            consumable: true,
         });
 
         // Test consuming an object
@@ -119,11 +119,11 @@ mod tests {
             description: "A rusty sword.".to_string(),
             location: Some(LOC_DUNGEONS),
             destination: None,
-            item: Some(true),
+            item: true,
             enemy: false,
             health: None,
             attack: Some(20),
-            consumable: Some(false),
+            consumable: false,
         });
 
         // Test dropping an object
