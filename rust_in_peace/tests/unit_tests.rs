@@ -93,7 +93,7 @@ mod tests {
             enemy: false,
             health: Some(10),
             attack: None,
-            consumable: Some(true),
+            consumable: true,
         });
 
         // Test consuming an object
@@ -123,7 +123,7 @@ mod tests {
             enemy: false,
             health: None,
             attack: Some(20),
-            consumable: Some(false),
+            consumable: false,
         });
 
         // Test dropping an object

@@ -78,7 +78,7 @@ pub struct Object {
     pub enemy: bool,
     pub health: Option<u64>,
     pub attack: Option<u64>,
-    pub consumable: Option<bool>,
+    pub consumable: bool,
 }
 
 /// Handles any ambiguous directions
@@ -109,7 +109,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Dungeons".to_string()],
@@ -120,7 +120,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Cave".to_string()],
@@ -131,7 +131,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Tavern".to_string()],
@@ -144,7 +144,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Village".to_string()],
@@ -157,7 +157,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Stronghold".to_string()],
@@ -170,7 +170,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Player".to_string()],
@@ -181,7 +181,7 @@ impl World {
                     enemy: false,
                     health: Some(100),
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Bear".to_string()],
@@ -192,7 +192,7 @@ impl World {
                     enemy: true,
                     health: Some(100),
                     attack: Some(20),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Troll (enemy)".to_string()],
@@ -203,7 +203,7 @@ impl World {
                     enemy: true,
                     health: Some(100),
                     attack: Some(20),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Bandits (enemy)".to_string()],
@@ -214,7 +214,7 @@ impl World {
                     enemy: true,
                     health: Some(100),
                     attack: Some(30),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Sword".to_string()],
@@ -225,7 +225,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: Some(20),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Bow".to_string()],
@@ -236,7 +236,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: Some(10),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Bones".to_string()],
@@ -247,7 +247,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: Some(5),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Spear".to_string()],
@@ -258,7 +258,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: Some(25),
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["Apple".to_string()],
@@ -269,7 +269,7 @@ impl World {
                     enemy: false,
                     health: Some(10),
                     attack: None,
-                    consumable: Some(true),
+                    consumable: true,
                 },
                 Object {
                     label: vec!["Potion".to_string()],
@@ -280,7 +280,7 @@ impl World {
                     enemy: false,
                     health: Some(20),
                     attack: None,
-                    consumable: Some(true),
+                    consumable: true,
                 },
                 Object {
                     label: vec!["North".to_string()],
@@ -292,7 +292,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["South".to_string()],
@@ -303,7 +303,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["East".to_string()],
@@ -314,7 +314,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["West".to_string()],
@@ -325,7 +325,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["East".to_string()],
@@ -336,7 +336,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["North".to_string()],
@@ -347,7 +347,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["South".to_string()],
@@ -358,7 +358,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["West".to_string()],
@@ -369,7 +369,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["North".to_string()],
@@ -380,7 +380,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["South".to_string()],
@@ -391,7 +391,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["West".to_string(), "East".to_string(), "South".to_string()],
@@ -403,7 +403,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["West".to_string(), "East".to_string(), "North".to_string()],
@@ -415,7 +415,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["North".to_string(), "".to_string()],
@@ -426,7 +426,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["East".to_string(),"West".to_string()],
@@ -437,7 +437,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["East".to_string(), "South".to_string()],
@@ -450,7 +450,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
                 Object {
                     label: vec!["East".to_string(), "North".to_string(), "West".to_string()],
@@ -461,7 +461,7 @@ impl World {
                     enemy: false,
                     health: None,
                     attack: None,
-                    consumable: Some(false),
+                    consumable: false,
                 },
             ],
         }
@@ -817,7 +817,7 @@ impl World {
         let obj_item = obj_opt.and_then(|a| self.objects[a].item).unwrap_or(false);
         let player_to_obj = self.get_distance(Some(LOC_PLAYER), obj_opt);
         let obj_consumable = obj_opt
-            .and_then(|a| self.objects[a].consumable)
+            .map(|a| self.objects[a].consumable)
             .unwrap_or(false);
 
         match (player_to_obj, obj_opt, obj_item, obj_consumable) {
