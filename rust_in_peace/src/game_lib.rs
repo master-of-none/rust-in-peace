@@ -67,6 +67,65 @@ impl fmt::Display for Command {
     }
 }
 
+pub(crate) enum Location {
+    Forest,
+    Dungeons,
+    Cave,
+    Tavern,
+    Village,
+    StrongHold,
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            Self::Forest => "Look out for tree people.",
+            Self::Dungeons => "Be aware of trolls.",
+            Self::Cave => "Watch out for bats and look out for light.",
+            Self::Tavern => "The tavern is empty. But the fire is still burning in the fireplace.",
+            Self::Village => "An abandoned village. It has been ransacked by a group of bandits.",
+            Self::StrongHold => "A stronghold. It is heavily guarded by a group of bandits.",
+        };
+
+        text.fmt(f)
+    }
+}
+struct Consumable {
+    name: String,
+    description: String,
+    health_points: usize,
+    location: Location,
+}
+
+struct Weapon {
+    description: String,
+    location: Location,
+    attack_points: usize,
+}
+
+struct Player {
+    name: String,
+    location: Location,
+    health: usize,
+}
+
+struct Enemy {
+    name: String,
+    description: String,
+    health: usize,
+    attack: usize,
+    location: Location,
+}
+
+impl Player {
+    fn new(name: String) -> Self {
+        Self {
+            name,
+            location: Location::Forest,
+            health: 100,
+        }
+    }
+}
 #[derive(Serialize, Deserialize, Debug)]
 /// The object struct
 pub struct Object {
