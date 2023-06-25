@@ -67,7 +67,7 @@ impl fmt::Display for Command {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub(crate) enum Location {
     Forest,
     Dungeons,
@@ -92,7 +92,7 @@ impl std::fmt::Display for Location {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct Consumable {
     name: String,
     description: String,
@@ -116,12 +116,12 @@ impl Consumable {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct Weapon {
     name: String,
     description: String,
     location: Location,
-    attack_points: usize,
+    attack_points: u64,
 }
 
 impl Weapon {
@@ -129,7 +129,7 @@ impl Weapon {
         name: T,
         description: T,
         location: Location,
-        attack_points: usize,
+        attack_points: u64,
     ) -> Self {
         Self {
             name: name.into(),
@@ -140,24 +140,24 @@ impl Weapon {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 struct Player {
     name: String,
     location: Location,
-    health: usize,
+    health: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct Enemy {
     name: String,
     description: String,
-    health: usize,
-    attack: usize,
+    health: u64,
+    attack: u64,
     location: Location,
 }
 
 impl Enemy {
-    fn new<T: Into<String>>(name: T, description: T, attack: usize, location: Location) -> Self {
+    fn new<T: Into<String>>(name: T, description: T, attack: u64, location: Location) -> Self {
         Self {
             name: name.into(),
             description: description.into(),
@@ -178,7 +178,7 @@ impl Player {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 /// The object struct
 pub enum Object {
     Player(Player),
@@ -541,14 +541,15 @@ impl World {
 
     /// Check if the object has a label
     fn object_with_label(&self, object: &Object, noun: &str) -> bool {
-        let mut result = false;
-        for (_, label) in object.label.iter().enumerate() {
-            if label.to_lowercase() == noun.to_lowercase() {
-                result = true;
-                break;
-            }
-        }
-        result
+        let object_name = match object {
+            Object::Player(player) => player.name,
+            Object::Weapon(weapon) => weapon.name,
+            Object::Consumable(consumable) => consumable.name,
+            Object::Enemy(enemy) => enemy.name,
+            Object::Location(location) => format!("{:?}", location),
+        };
+
+        object_name.to_lowercase() == noun.to_lowercase()
     }
 
     /// Get the index of the object
@@ -646,62 +647,59 @@ impl World {
         let mut split_input = msg.split_whitespace();
         let noun = split_input.nth(1).unwrap_or_default().to_string();
         let (output, obj_opt) = self.object_visible(&noun);
-        match obj_opt {
-            Some(weapon_index) if !self.objects[weapon_index].enemy => {
-                if let Some(attack_pwr) = self.objects[weapon_index].attack {
-                    if let Some(enemy_pwr) = self.objects[obj_index].attack {
-                        obj_health -= attack_pwr;
-                        self.type_writer_effect(&format!(
-                            "You attacked the {}.\nEnemy health: {}",
-                            self.objects[obj_index].label[0], obj_health
-                        ));
-                        if obj_health == 0 {
-                            self.objects[obj_index].health = Some(0);
-                            return obj_health;
-                        }
-                        self.type_writer_effect(&format!(
-                            "\n\nThe {} attacks",
-                            self.objects[obj_index].label[0]
-                        ));
-                        // random attack
-                        let mut rng = rand::thread_rng();
-                        let attack: u64 = rng.gen_range(0..enemy_pwr);
-                        if attack == 0 {
-                            self.type_writer_effect("\nYou dodged the attack");
-                            obj_health
-                        } else {
-                            self.type_writer_effect("\nYou got hit");
-                            self.objects[LOC_PLAYER].health = Some(
-                                self.objects[LOC_PLAYER]
-                                    .health
-                                    .map(|h| h - attack)
-                                    .unwrap_or(0),
-                            );
-                            self.type_writer_effect(&format!(
-                                "\nYour health: {}",
-                                self.objects[LOC_PLAYER].health.unwrap_or(0)
-                            ));
-                            obj_health
-                        }
-                    } else {
-                        obj_health
-                    }
-                } else {
-                    self.type_writer_effect("That is not a weapon!!");
-                    println!("\nHint: Use the following commands: use <weapon name> or run");
-                    obj_health
-                }
-            }
-            Some(_) => {
-                self.type_writer_effect("That is not a weapon!!");
-                println!("\nHint: Use the following commands: use <weapon name> or run");
-                obj_health
-            }
+
+        let object = match obj_opt {
+            Some(index) => self.objects[index],
             None => {
                 self.type_writer_effect(&output);
-                obj_health
+                return obj_health;
             }
+        };
+
+        let weapon = match object {
+            Object::Weapon(w) => w,
+            _ => {
+                self.type_writer_effect("That is not a weapon!!");
+                println!("\nHint: Use the following commands: use <weapon name> or run");
+                return obj_health;
+            }
+        };
+
+        let attack_pwr = weapon.attack_points;
+        let mut enemy = match self.objects[obj_index] {
+            Object::Enemy(e) => e,
+            _ => return obj_health,
+        };
+        obj_health -= attack_pwr;
+        self.type_writer_effect(&format!(
+            "You attacked the {}.\nEnemy health: {}",
+            enemy.name, obj_health
+        ));
+        if obj_health == 0 {
+            enemy.health = 0;
+            return obj_health;
         }
+        self.type_writer_effect(&format!("\n\nThe {} attacks", enemy.name));
+
+        // random attack
+        let mut rng = rand::thread_rng();
+        let attack: u64 = rng.gen_range(0..enemy.attack);
+
+        if attack == 0 {
+            self.type_writer_effect("\nYou dodged the attack");
+        } else {
+            self.type_writer_effect("\nYou got hit");
+            let player: Result<Player, _> = self.objects[LOC_PLAYER].try_into();
+            let player_health = player
+                .map(|mut player| {
+                    player.health -= attack;
+                    player.health
+                })
+                .unwrap_or_default();
+            self.type_writer_effect(&format!("\nYour health: {}", player_health));
+        }
+
+        obj_health
     }
 
     /// Function to attack an enemy
