@@ -147,6 +147,7 @@ struct Player {
     health: usize,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct Enemy {
     name: String,
     description: String,
@@ -168,9 +169,9 @@ impl Enemy {
 }
 
 impl Player {
-    fn new(name: String) -> Self {
+    fn new<T: Into<String>>(name: T) -> Self {
         Self {
-            name,
+            name: name.into(),
             location: Location::Forest,
             health: 100,
         }
@@ -229,6 +230,50 @@ pub enum AmbiguousOption<T> {
 /// The world struct
 pub struct World {
     pub objects: Vec<Object>,
+}
+
+impl TryFrom<Object> for Player {
+    type Error = &'static str;
+
+    fn try_from(object: Object) -> Result<Self, Self::Error> {
+        match object {
+            Object::Player(player) => Ok(player),
+            _ => Err("This is not a player."),
+        }
+    }
+}
+
+impl TryFrom<Object> for Weapon {
+    type Error = &'static str;
+
+    fn try_from(object: Object) -> Result<Self, Self::Error> {
+        match object {
+            Object::Weapon(weapon) => Ok(weapon),
+            _ => Err("This is not a weapon."),
+        }
+    }
+}
+
+impl TryFrom<Object> for Consumable {
+    type Error = &'static str;
+
+    fn try_from(object: Object) -> Result<Self, Self::Error> {
+        match object {
+            Object::Consumable(consumable) => Ok(consumable),
+            _ => Err("This is not a consumable."),
+        }
+    }
+}
+
+impl TryFrom<Object> for Enemy {
+    type Error = &'static str;
+
+    fn try_from(object: Object) -> Result<Self, Self::Error> {
+        match object {
+            Object::Enemy(enemy) => Ok(enemy),
+            _ => Err("This is not an enemy."),
+        }
+    }
 }
 
 /// The game struct
@@ -462,12 +507,22 @@ impl World {
 
     /// Check of the game is over
     pub fn game_over(&self) -> bool {
-        if self.objects[LOC_PLAYER].health == Some(0) {
+        // TODO: Return an enum to indicate the kind of game over (won, lost because (list of enemies) remaining, ...).
+        let player_health = Player::try_from(self.objects[LOC_PLAYER])
+            .map(|player| player.health)
+            .unwrap();
+        let all_enemies_dead = [LOC_BEAR, LOC_TROLL, LOC_BANDITS]
+            .into_iter()
+            .filter_map(|index| {
+                Enemy::try_from(self.objects[index])
+                    .map(|enemy| enemy.health)
+                    .ok()
+            })
+            .all(|health| health == 0);
+
+        if player_health == 0 {
             true
-        } else if self.objects[LOC_BEAR].health == Some(0)
-            && self.objects[LOC_TROLL].health == Some(0)
-            && self.objects[LOC_BANDITS].health == Some(0)
-        {
+        } else if all_enemies_dead {
             println!("You have defeated all enemies! You win!");
             true
         } else {
@@ -787,9 +842,7 @@ impl World {
         let (output, obj_opt) = self.object_visible(noun);
         let obj_item = obj_opt.map(|a| self.objects[a].item).unwrap_or(false);
         let player_to_obj = self.get_distance(Some(LOC_PLAYER), obj_opt);
-        let obj_consumable = obj_opt
-            .map(|a| self.objects[a].consumable)
-            .unwrap_or(false);
+        let obj_consumable = obj_opt.map(|a| self.objects[a].consumable).unwrap_or(false);
 
         match (player_to_obj, obj_opt, obj_item, obj_consumable) {
             (Distance::Player, _, _, _) => output + "Invalid!! You cannot get that!!",
