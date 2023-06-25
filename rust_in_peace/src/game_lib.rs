@@ -600,18 +600,24 @@ impl World {
     fn list_objects(&self, location: usize) -> (String, u64) {
         let mut result = String::new();
         let mut count: u64 = 0;
+
+        result.push_str("\nYou see:\n");
+
         for (pos, object) in self.objects.iter().enumerate() {
-            if pos != LOC_PLAYER
-                && self.is_containing(Some(location), Some(pos))
-                && object.label.len() == 1
-            {
-                if count == 0 {
-                    result += "\nYou see:\n";
-                }
+            let description = match object {
+                Object::Weapon(weapon) => weapon.description,
+                Object::Consumable(consumable) => consumable.description,
+                Object::Enemy(enemy) => enemy.description,
+                _ => continue,
+            };
+
+            if self.is_containing(Some(location), Some(pos)) {
                 count += 1;
-                result += &format!("{}\n", object.description);
+                result.push_str(&description);
+                result.push('\n');
             }
         }
+
         (result, count)
     }
 
