@@ -67,7 +67,118 @@ impl fmt::Display for Command {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub(crate) enum Location {
+    Forest,
+    Dungeons,
+    Cave,
+    Tavern,
+    Village,
+    StrongHold,
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            Self::Forest => "Look out for tree people.",
+            Self::Dungeons => "Be aware of trolls.",
+            Self::Cave => "Watch out for bats and look out for light.",
+            Self::Tavern => "The tavern is empty. But the fire is still burning in the fireplace.",
+            Self::Village => "An abandoned village. It has been ransacked by a group of bandits.",
+            Self::StrongHold => "A stronghold. It is heavily guarded by a group of bandits.",
+        };
+
+        text.fmt(f)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+struct Consumable {
+    name: String,
+    description: String,
+    health_points: usize,
+    location: Location,
+}
+
+impl Consumable {
+    fn new<T: Into<String>>(
+        name: T,
+        description: T,
+        health_points: usize,
+        location: Location,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+            health_points,
+            location,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+struct Weapon {
+    name: String,
+    description: String,
+    location: Location,
+    attack_points: u64,
+}
+
+impl Weapon {
+    fn new<T: Into<String>>(
+        name: T,
+        description: T,
+        location: Location,
+        attack_points: u64,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+            location,
+            attack_points,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+struct Player {
+    name: String,
+    location: Location,
+    health: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+struct Enemy {
+    name: String,
+    description: String,
+    health: u64,
+    attack: u64,
+    location: Location,
+}
+
+impl Enemy {
+    fn new<T: Into<String>>(name: T, description: T, attack: u64, location: Location) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+            attack,
+            location,
+            health: 100,
+        }
+    }
+}
+
+impl Player {
+    fn new<T: Into<String>>(name: T) -> Self {
+        Self {
+            name: name.into(),
+            location: Location::Forest,
+            health: 100,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 /// The object struct
 pub struct Object {
     pub label: Vec<String>,
@@ -515,14 +626,15 @@ impl World {
 
     /// Check if the object has a label
     fn object_with_label(&self, object: &Object, noun: &str) -> bool {
-        let mut result = false;
-        for (_, label) in object.label.iter().enumerate() {
-            if label.to_lowercase() == noun.to_lowercase() {
-                result = true;
-                break;
-            }
-        }
-        result
+        let object_name = match object {
+            Object::Player(player) => player.name,
+            Object::Weapon(weapon) => weapon.name,
+            Object::Consumable(consumable) => consumable.name,
+            Object::Enemy(enemy) => enemy.name,
+            Object::Location(location) => format!("{:?}", location),
+        };
+
+        object_name.to_lowercase() == noun.to_lowercase()
     }
 
     /// Get the index of the object
@@ -574,18 +686,24 @@ impl World {
     fn list_objects(&self, location: usize) -> (String, u64) {
         let mut result = String::new();
         let mut count: u64 = 0;
+
+        result.push_str("\nYou see:\n");
+
         for (pos, object) in self.objects.iter().enumerate() {
-            if pos != LOC_PLAYER
-                && self.is_containing(Some(location), Some(pos))
-                && object.label.len() == 1
-            {
-                if count == 0 {
-                    result += "\nYou see:\n";
-                }
+            let description = match object {
+                Object::Weapon(weapon) => weapon.description,
+                Object::Consumable(consumable) => consumable.description,
+                Object::Enemy(enemy) => enemy.description,
+                _ => continue,
+            };
+
+            if self.is_containing(Some(location), Some(pos)) {
                 count += 1;
-                result += &format!("{}\n", object.description);
+                result.push_str(&description);
+                result.push('\n');
             }
         }
+
         (result, count)
     }
 
@@ -614,126 +732,119 @@ impl World {
         let mut split_input = msg.split_whitespace();
         let noun = split_input.nth(1).unwrap_or_default().to_string();
         let (output, obj_opt) = self.object_visible(&noun);
-        match obj_opt {
-            Some(weapon_index) if !self.objects[weapon_index].enemy => {
-                if let Some(attack_pwr) = self.objects[weapon_index].attack {
-                    if let Some(enemy_pwr) = self.objects[obj_index].attack {
-                        obj_health -= attack_pwr;
-                        self.type_writer_effect(&format!(
-                            "You attacked the {}.\nEnemy health: {}",
-                            self.objects[obj_index].label[0], obj_health
-                        ));
-                        if obj_health == 0 {
-                            self.objects[obj_index].health = Some(0);
-                            return obj_health;
-                        }
-                        self.type_writer_effect(&format!(
-                            "\n\nThe {} attacks",
-                            self.objects[obj_index].label[0]
-                        ));
-                        // random attack
-                        let mut rng = rand::thread_rng();
-                        let attack: u64 = rng.gen_range(0..enemy_pwr);
-                        if attack == 0 {
-                            self.type_writer_effect("\nYou dodged the attack");
-                            obj_health
-                        } else {
-                            self.type_writer_effect("\nYou got hit");
-                            self.objects[LOC_PLAYER].health = Some(
-                                self.objects[LOC_PLAYER]
-                                    .health
-                                    .map(|h| h - attack)
-                                    .unwrap_or(0),
-                            );
-                            self.type_writer_effect(&format!(
-                                "\nYour health: {}",
-                                self.objects[LOC_PLAYER].health.unwrap_or(0)
-                            ));
-                            obj_health
-                        }
-                    } else {
-                        obj_health
-                    }
-                } else {
-                    self.type_writer_effect("That is not a weapon!!");
-                    println!("\nHint: Use the following commands: use <weapon name> or run");
-                    obj_health
-                }
-            }
-            Some(_) => {
-                self.type_writer_effect("That is not a weapon!!");
-                println!("\nHint: Use the following commands: use <weapon name> or run");
-                obj_health
-            }
+
+        let object = match obj_opt {
+            Some(index) => self.objects[index],
             None => {
                 self.type_writer_effect(&output);
-                obj_health
+                return obj_health;
             }
+        };
+
+        let weapon = match object {
+            Object::Weapon(w) => w,
+            _ => {
+                self.type_writer_effect("That is not a weapon!!");
+                println!("\nHint: Use the following commands: use <weapon name> or run");
+                return obj_health;
+            }
+        };
+
+        let attack_pwr = weapon.attack_points;
+        let mut enemy = match self.objects[obj_index] {
+            Object::Enemy(e) => e,
+            _ => return obj_health,
+        };
+        obj_health -= attack_pwr;
+        self.type_writer_effect(&format!(
+            "You attacked the {}.\nEnemy health: {}",
+            enemy.name, obj_health
+        ));
+        if obj_health == 0 {
+            enemy.health = 0;
+            return obj_health;
         }
+        self.type_writer_effect(&format!("\n\nThe {} attacks", enemy.name));
+
+        // random attack
+        let mut rng = rand::thread_rng();
+        let attack: u64 = rng.gen_range(0..enemy.attack);
+
+        if attack == 0 {
+            self.type_writer_effect("\nYou dodged the attack");
+        } else {
+            self.type_writer_effect("\nYou got hit");
+            let player: Result<Player, _> = self.objects[LOC_PLAYER].try_into();
+            let player_health = player
+                .map(|mut player| {
+                    player.health -= attack;
+                    player.health
+                })
+                .unwrap_or_default();
+            self.type_writer_effect(&format!("\nYour health: {}", player_health));
+        }
+
+        obj_health
     }
 
     /// Function to attack an enemy
     pub fn do_attack(&mut self, noun: &String) -> String {
         let (output, obj_opt) = self.object_visible(noun);
 
-        match obj_opt {
-            Some(obj_index) => {
-                if self.objects[obj_index].enemy {
-                    let mut obj_health: u64 =
-                        obj_opt.and_then(|a| self.objects[a].health).unwrap_or(0);
-                    if obj_health == 0 {
-                        return format!(
-                            "The {} is already dead.\n",
-                            self.objects[obj_index].label[0]
-                        );
-                    }
-                    self.type_writer_effect(&format!(
-                        "\nYou are attacking the {}.\n",
-                        self.objects[obj_index].label[0]
-                    ));
-                    println!("\nHint: Use the following commands when attacking: 'use <weapon name>' or 'inventory' or 'run'");
-                    loop {
-                        if self.objects[LOC_PLAYER].health.unwrap_or(0) == 0 {
-                            return "\nYou died".to_string();
-                        }
-                        print!("\n> ");
-                        io::stdout().flush().unwrap();
+        let obj_index = match obj_opt {
+            Some(i) => i,
+            None => return output,
+        };
 
-                        let mut command = String::new();
-                        io::stdin()
-                            .read_line(&mut command)
-                            .expect("Failed to read input");
-                        if command.contains("run") {
-                            break;
-                        } else if command.contains("inventory") {
-                            let list_objects = self.do_inventory();
-                            self.type_writer_effect(&list_objects);
-                            continue;
-                        } else if command.contains("use") {
-                            obj_health = self.do_use(&command, obj_health, obj_index);
-                            if obj_health == 0 {
-                                break;
-                            }
-                        } else {
-                            println!("\nHint: Use the following commands when attacking: 'use <weapon name>' or 'inventory' or 'run'");
-                        }
-                    }
-                    if obj_health == 0 {
-                        format!("\nYou killed the {}.\n", self.objects[obj_index].label[0])
-                    } else {
-                        format!(
-                            "You ran away from the {}.\n",
-                            self.objects[obj_index].label[0]
-                        )
-                    }
-                } else {
-                    format!(
-                        "You can't attack the {}.\n",
-                        self.objects[obj_index].label[0]
-                    )
-                }
+        let enemy = match self.objects[obj_index] {
+            Object::Enemy(e) => e,
+            _ => return format!("You can't attack the {}.\n", noun),
+        };
+
+        let mut obj_health: u64 = enemy.health;
+
+        if obj_health == 0 {
+            return format!("The {} is already dead.\n", enemy.name);
+        }
+        self.type_writer_effect(&format!("\nYou are attacking the {}.\n", enemy.name));
+
+        println!("\nHint: Use the following commands when attacking: 'use <weapon name>' or 'inventory' or 'run'");
+
+        let player: Player = self.objects[LOC_PLAYER].try_into().unwrap();
+
+        loop {
+            if player.health == 0 {
+                return "\nYou died".to_string();
             }
-            None => output,
+            print!("\n> ");
+            io::stdout().flush().unwrap();
+
+            let mut command = String::new();
+            io::stdin()
+                .read_line(&mut command)
+                .expect("Failed to read input");
+            if command.contains("run") {
+                break;
+            } else if command.contains("inventory") {
+                let list_objects = self.do_inventory();
+                self.type_writer_effect(&list_objects);
+                continue;
+            } else if command.contains("use") {
+                obj_health = self.do_use(&command, obj_health, obj_index);
+                if obj_health == 0 {
+                    break;
+                }
+            } else {
+                println!("\nHint: Use the following commands when attacking: 'use <weapon name>' or 'inventory' or 'run'");
+            }
+        }
+        if obj_health == 0 {
+            format!("\nYou killed the {}.\n", enemy.name)
+        } else {
+            format!(
+                "You ran away from the {}.\n",
+                enemy.name
+            )
         }
     }
 
