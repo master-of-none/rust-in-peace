@@ -180,42 +180,16 @@ impl Player {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 /// The object struct
-pub enum Object {
-    Player(Player),
-    Weapon(Weapon),
-    Consumable(Consumable),
-    Enemy(Enemy),
-    Location(Location),
-}
-
-impl From<Location> for Object {
-    fn from(location: Location) -> Self {
-        Self::Location(location)
-    }
-}
-
-impl From<Player> for Object {
-    fn from(player: Player) -> Self {
-        Self::Player(player)
-    }
-}
-
-impl From<Weapon> for Object {
-    fn from(weapon: Weapon) -> Self {
-        Self::Weapon(weapon)
-    }
-}
-
-impl From<Consumable> for Object {
-    fn from(consumable: Consumable) -> Self {
-        Self::Consumable(consumable)
-    }
-}
-
-impl From<Enemy> for Object {
-    fn from(enemy: Enemy) -> Self {
-        Self::Enemy(enemy)
-    }
+pub struct Object {
+    pub label: Vec<String>,
+    pub description: String,
+    pub location: Option<usize>,
+    pub destination: Option<usize>,
+    pub item: bool,
+    pub enemy: bool,
+    pub health: Option<u64>,
+    pub attack: Option<u64>,
+    pub consumable: bool,
 }
 
 /// Handles any ambiguous directions
@@ -232,253 +206,374 @@ pub struct World {
     pub objects: Vec<Object>,
 }
 
-impl TryFrom<Object> for Player {
-    type Error = &'static str;
-
-    fn try_from(object: Object) -> Result<Self, Self::Error> {
-        match object {
-            Object::Player(player) => Ok(player),
-            _ => Err("This is not a player."),
-        }
-    }
-}
-
-impl TryFrom<Object> for Weapon {
-    type Error = &'static str;
-
-    fn try_from(object: Object) -> Result<Self, Self::Error> {
-        match object {
-            Object::Weapon(weapon) => Ok(weapon),
-            _ => Err("This is not a weapon."),
-        }
-    }
-}
-
-impl TryFrom<Object> for Consumable {
-    type Error = &'static str;
-
-    fn try_from(object: Object) -> Result<Self, Self::Error> {
-        match object {
-            Object::Consumable(consumable) => Ok(consumable),
-            _ => Err("This is not a consumable."),
-        }
-    }
-}
-
-impl TryFrom<Object> for Enemy {
-    type Error = &'static str;
-
-    fn try_from(object: Object) -> Result<Self, Self::Error> {
-        match object {
-            Object::Enemy(enemy) => Ok(enemy),
-            _ => Err("This is not an enemy."),
-        }
-    }
-}
-
 /// The game struct
 impl World {
     pub fn new() -> Self {
         World {
             objects: vec![
-                Location::Forest.into(),
-                Location::Dungeons.into(),
-                Location::Cave.into(),
-                Location::Tavern.into(),
-                Location::Village.into(),
-                Location::StrongHold.into(),
-                Player::new("Master of None").into(),
-                Enemy::new("Bear", "A bear", 20, Location::Cave).into(),
-                Enemy::new("Troll", "A troll", 20, Location::Dungeons).into(),
-                Enemy::new("Bandits", "A group of bandits", 30, Location::StrongHold).into(),
-                Weapon::new("Sword", "A rusty sword", Location::Dungeons, 20).into(),
-                Weapon::new("Bow", "A bow", Location::Tavern, 10).into(),
-                Weapon::new("Bones", "Bones of an animal", Location::Cave, 5).into(),
-                Weapon::new("Spear", "A spear", Location::Village, 25).into(),
-                Consumable::new("Apple", "An apple", 10, Location::Tavern).into(),
-                Consumable::new("Potion", "A vial of healing potion (Get it to increase health)  (Hint: Type <get potion> to consume it)", 20, Location::Village).into(),
-                // TODO: Model the map (directions).
-                // Object {
-                //     label: vec!["North".to_string()],
-                //     description: "A path to the north leading out of the forest leading to an old Tavern"
-                //         .to_string(),
-                //     location: Some(LOC_FOREST),
-                //     destination: Some(LOC_TAVERN),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["South".to_string()],
-                //     description: "A path to the south leading back to the forest".to_string(),
-                //     location: Some(LOC_TAVERN),
-                //     destination: Some(LOC_FOREST),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["East".to_string()],
-                //     description: "A path to the east leading to the Dungeons".to_string(),
-                //     location: Some(LOC_TAVERN),
-                //     destination: Some(LOC_DUNGEONS),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["West".to_string()],
-                //     description: "A path to the west leading to an abandoned village".to_string(),
-                //     location: Some(LOC_TAVERN),
-                //     destination: Some(LOC_VILLAGE),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["East".to_string()],
-                //     description: "A path to the east leading to the tavern".to_string(),
-                //     location: Some(LOC_VILLAGE),
-                //     destination: Some(LOC_TAVERN),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["North".to_string()],
-                //     description: "A path to the north leading to a stronghold".to_string(),
-                //     location: Some(LOC_VILLAGE),
-                //     destination: Some(LOC_STRONGHOLD),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["South".to_string()],
-                //     description: "A path to the south leading to the village".to_string(),
-                //     location: Some(LOC_STRONGHOLD),
-                //     destination: Some(LOC_VILLAGE),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["West".to_string()],
-                //     description: "A path to the west leading to the Tavern".to_string(),
-                //     location: Some(LOC_DUNGEONS),
-                //     destination: Some(LOC_TAVERN),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["North".to_string()],
-                //     description: "A path to the north into a cave".to_string(),
-                //     location: Some(LOC_DUNGEONS),
-                //     destination: Some(LOC_CAVE),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["South".to_string()],
-                //     description: "A path to the south into the dungeons".to_string(),
-                //     location: Some(LOC_CAVE),
-                //     destination: Some(LOC_DUNGEONS),
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["West".to_string(), "East".to_string(), "South".to_string()],
-                //     description: "You see nothing but trees. There is no other path in that direction."
-                //         .to_string(),
-                //     location: Some(LOC_FOREST),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["West".to_string(), "East".to_string(), "North".to_string()],
-                //     description: "There is no other path in that direction."
-                //         .to_string(),
-                //     location: Some(LOC_STRONGHOLD),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["North".to_string(), "".to_string()],
-                //     description: "There is no other path in that direction.".to_string(),
-                //     location: Some(LOC_TAVERN),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["East".to_string(),"West".to_string()],
-                //     description: "There is no other path in that direction.".to_string(),
-                //     location: Some(LOC_VILLAGE),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["East".to_string(), "South".to_string()],
-                //     description:
-                //         "You see only big rocks and boulders. There is no other path in that direction."
-                //             .to_string(),
-                //     location: Some(LOC_DUNGEONS),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
-                // Object {
-                //     label: vec!["East".to_string(), "North".to_string(), "West".to_string()],
-                //     description: "The cave has no paths in that direction".to_string(),
-                //     location: Some(LOC_CAVE),
-                //     destination: None,
-                //     item: false,
-                //     enemy: false,
-                //     health: None,
-                //     attack: None,
-                //     consumable: false,
-                // },
+                Object {
+                    label: vec!["Forest".to_string()],
+                    description: "Look out for tree people".to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Dungeons".to_string()],
+                    description: "Be aware of the trolls in the dungeon.".to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Cave".to_string()],
+                    description: "Watch out for bats and look for light.".to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Tavern".to_string()],
+                    description:
+                        "The tavern is empty. But the fire is still burning in the fireplace."
+                            .to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Village".to_string()],
+                    description:
+                        "An abandoned village. It has been ransacked by a group of bandits."
+                            .to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Stronghold".to_string()],
+                    description:
+                        "A stronghold. It is heavily guarded by a group of bandits."
+                            .to_string(),
+                    location: None,
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Player".to_string()],
+                    description: "You".to_string(),
+                    location: Some(LOC_FOREST),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: Some(100),
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Bear".to_string()],
+                    description: "A bear (enemy)".to_string(),
+                    location: Some(LOC_CAVE),
+                    destination: None,
+                    item: false,
+                    enemy: true,
+                    health: Some(100),
+                    attack: Some(20),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Troll (enemy)".to_string()],
+                    description: "A troll".to_string(),
+                    location: Some(LOC_DUNGEONS),
+                    destination: None,
+                    item: false,
+                    enemy: true,
+                    health: Some(100),
+                    attack: Some(20),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Bandits (enemy)".to_string()],
+                    description: "A group of bandits".to_string(),
+                    location: Some(LOC_STRONGHOLD),
+                    destination: None,
+                    item: false,
+                    enemy: true,
+                    health: Some(100),
+                    attack: Some(30),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Sword".to_string()],
+                    description: "A rusty sword.".to_string(),
+                    location: Some(LOC_DUNGEONS),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: None,
+                    attack: Some(20),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Bow".to_string()],
+                    description: "A bow.".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: None,
+                    attack: Some(10),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Bones".to_string()],
+                    description: "Bones of some animal.".to_string(),
+                    location: Some(LOC_CAVE),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: None,
+                    attack: Some(5),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Spear".to_string()],
+                    description: "A spear.".to_string(),
+                    location: Some(LOC_VILLAGE),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: None,
+                    attack: Some(25),
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["Apple".to_string()],
+                    description: "An apple (Get it to increase health)".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: Some(10),
+                    attack: None,
+                    consumable: true,
+                },
+                Object {
+                    label: vec!["Potion".to_string()],
+                    description: "A vial of healing potion (Get it to increase health)  (Hint: Type <get potion> to consume it)".to_string(),
+                    location: Some(LOC_VILLAGE),
+                    destination: None,
+                    item: true,
+                    enemy: false,
+                    health: Some(20),
+                    attack: None,
+                    consumable: true,
+                },
+                Object {
+                    label: vec!["North".to_string()],
+                    description: "A path to the north leading out of the forest leading to an old Tavern"
+                        .to_string(),
+                    location: Some(LOC_FOREST),
+                    destination: Some(LOC_TAVERN),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["South".to_string()],
+                    description: "A path to the south leading back to the forest".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: Some(LOC_FOREST),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["East".to_string()],
+                    description: "A path to the east leading to the Dungeons".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: Some(LOC_DUNGEONS),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["West".to_string()],
+                    description: "A path to the west leading to an abandoned village".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: Some(LOC_VILLAGE),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["East".to_string()],
+                    description: "A path to the east leading to the tavern".to_string(),
+                    location: Some(LOC_VILLAGE),
+                    destination: Some(LOC_TAVERN),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["North".to_string()],
+                    description: "A path to the north leading to a stronghold".to_string(),
+                    location: Some(LOC_VILLAGE),
+                    destination: Some(LOC_STRONGHOLD),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["South".to_string()],
+                    description: "A path to the south leading to the village".to_string(),
+                    location: Some(LOC_STRONGHOLD),
+                    destination: Some(LOC_VILLAGE),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["West".to_string()],
+                    description: "A path to the west leading to the Tavern".to_string(),
+                    location: Some(LOC_DUNGEONS),
+                    destination: Some(LOC_TAVERN),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["North".to_string()],
+                    description: "A path to the north into a cave".to_string(),
+                    location: Some(LOC_DUNGEONS),
+                    destination: Some(LOC_CAVE),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["South".to_string()],
+                    description: "A path to the south into the dungeons".to_string(),
+                    location: Some(LOC_CAVE),
+                    destination: Some(LOC_DUNGEONS),
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["West".to_string(), "East".to_string(), "South".to_string()],
+                    description: "You see nothing but trees. There is no other path in that direction."
+                        .to_string(),
+                    location: Some(LOC_FOREST),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["West".to_string(), "East".to_string(), "North".to_string()],
+                    description: "There is no other path in that direction."
+                        .to_string(),
+                    location: Some(LOC_STRONGHOLD),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["North".to_string(), "".to_string()],
+                    description: "There is no other path in that direction.".to_string(),
+                    location: Some(LOC_TAVERN),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["East".to_string(),"West".to_string()],
+                    description: "There is no other path in that direction.".to_string(),
+                    location: Some(LOC_VILLAGE),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["East".to_string(), "South".to_string()],
+                    description:
+                        "You see only big rocks and boulders. There is no other path in that direction."
+                            .to_string(),
+                    location: Some(LOC_DUNGEONS),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
+                Object {
+                    label: vec!["East".to_string(), "North".to_string(), "West".to_string()],
+                    description: "The cave has no paths in that direction".to_string(),
+                    location: Some(LOC_CAVE),
+                    destination: None,
+                    item: false,
+                    enemy: false,
+                    health: None,
+                    attack: None,
+                    consumable: false,
+                },
             ],
         }
     }
@@ -507,22 +602,12 @@ impl World {
 
     /// Check of the game is over
     pub fn game_over(&self) -> bool {
-        // TODO: Return an enum to indicate the kind of game over (won, lost because (list of enemies) remaining, ...).
-        let player_health = Player::try_from(self.objects[LOC_PLAYER])
-            .map(|player| player.health)
-            .unwrap();
-        let all_enemies_dead = [LOC_BEAR, LOC_TROLL, LOC_BANDITS]
-            .into_iter()
-            .filter_map(|index| {
-                Enemy::try_from(self.objects[index])
-                    .map(|enemy| enemy.health)
-                    .ok()
-            })
-            .all(|health| health == 0);
-
-        if player_health == 0 {
+        if self.objects[LOC_PLAYER].health == Some(0) {
             true
-        } else if all_enemies_dead {
+        } else if self.objects[LOC_BEAR].health == Some(0)
+            && self.objects[LOC_TROLL].health == Some(0)
+            && self.objects[LOC_BANDITS].health == Some(0)
+        {
             println!("You have defeated all enemies! You win!");
             true
         } else {
@@ -842,7 +927,9 @@ impl World {
         let (output, obj_opt) = self.object_visible(noun);
         let obj_item = obj_opt.map(|a| self.objects[a].item).unwrap_or(false);
         let player_to_obj = self.get_distance(Some(LOC_PLAYER), obj_opt);
-        let obj_consumable = obj_opt.map(|a| self.objects[a].consumable).unwrap_or(false);
+        let obj_consumable = obj_opt
+            .map(|a| self.objects[a].consumable)
+            .unwrap_or(false);
 
         match (player_to_obj, obj_opt, obj_item, obj_consumable) {
             (Distance::Player, _, _, _) => output + "Invalid!! You cannot get that!!",
